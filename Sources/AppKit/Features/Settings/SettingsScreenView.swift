@@ -24,6 +24,8 @@ struct SettingsScreenView: View {
         ModelSectionView(store: store)
         PremiumFeaturesSectionView(store: store.scope(state: \.premiumFeaturesSection, action: \.premiumFeaturesSection))
         SpeechSectionView(store: store)
+        DisplaySectionView(store: store)
+        IntegrationsSectionView(store: store)
 
         #if DEBUG
           DebugSectionView(store: store)
@@ -98,6 +100,64 @@ struct SpeechSectionView: View {
         Text(
           "Turn this on to allow background audio from other apps to continue playing while you record. This app will lower the volume of other audio sources (ducking) during recording. Turn off to ensure other apps are paused and only your recording is captured."
         )
+      }
+      .listRowBackground(Color.DS.Background.secondary).listRowSeparator(.hidden)
+    }
+  }
+}
+
+// MARK: - IntegrationsSectionView
+
+struct IntegrationsSectionView: View {
+  @Perception.Bindable var store: StoreOf<SettingsScreen>
+
+  var body: some View {
+    WithPerceptionTracking {
+      Section {
+        SettingsToggleButton(
+          icon: .system(name: "link", background: .systemOrange),
+          title: "Enable Webhook",
+          isOn: $store.settings.isWebhookEnabled
+        )
+
+        HStack(spacing: .grid(3)) {
+          SettingsIconView.system(name: "globe", background: .systemBlue.darken(by: 0.1))
+
+          TextField("https://example.com/webhook", text: $store.settings.webhookURL)
+            .textStyle(.label)
+            .keyboardType(.URL)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.never)
+        }
+        .disabled(!store.settings.isWebhookEnabled)
+        .opacity(store.settings.isWebhookEnabled ? 1 : 0.4)
+      } header: {
+        Text("Integrations")
+      } footer: {
+        Text("When enabled, completed transcriptions are automatically sent as a JSON POST request to the configured URL.")
+      }
+      .listRowBackground(Color.DS.Background.secondary).listRowSeparator(.hidden)
+    }
+  }
+}
+
+// MARK: - DisplaySectionView
+
+struct DisplaySectionView: View {
+  @Perception.Bindable var store: StoreOf<SettingsScreen>
+
+  var body: some View {
+    WithPerceptionTracking {
+      Section {
+        SettingsToggleButton(
+          icon: .system(name: "person.wave.2", background: .systemIndigo),
+          title: "Show Speaker Labels",
+          isOn: $store.settings.isShowingSpeakerLabels
+        )
+      } header: {
+        Text("Display")
+      } footer: {
+        Text("When speaker information is available, display speaker labels alongside each segment in the timeline view.")
       }
       .listRowBackground(Color.DS.Background.secondary).listRowSeparator(.hidden)
     }
