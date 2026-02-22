@@ -17,19 +17,26 @@ struct RecordingDetails {
     var text: String
     var startTime: Duration
     var endTime: Duration
+    var speaker: String?
   }
 
   @ObservableState
   struct State: Equatable {
     var recordingCard: RecordingCard.State
     @Shared var displayMode: DisplayMode
+    @Shared(.settings) var settings: Settings
 
     @Presents var alert: AlertState<Action.Alert>?
     @Presents var actionSheet: RecordingActionsSheet.State?
 
     var timeline: [TimelineItem] {
       recordingCard.recording.transcription?.segments.map {
-        TimelineItem(text: $0.text, startTime: Duration.milliseconds($0.startTimeMS), endTime: Duration.milliseconds($0.endTimeMS))
+        TimelineItem(
+          text: $0.text,
+          startTime: Duration.milliseconds($0.startTimeMS),
+          endTime: Duration.milliseconds($0.endTimeMS),
+          speaker: $0.speaker
+        )
       } ?? []
     }
 
@@ -204,26 +211,67 @@ struct RecordingDetailsView: View {
   }
 
   private var textTranscriptionView: some View {
-    Text(store.recordingCard.transcription)
-      .foregroundColor(store.recordingCard.recording.isTranscribing ? .DS.Text.subdued : .DS.Text.base)
-      .textStyle(.body)
-      .lineLimit(nil)
-      .textSelection(.enabled)
-      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-      .padding(.vertical, .grid(2))
-      .padding(.horizontal, .grid(4))
-      // .id(1)
+    Group {
+      if store.settings.isShowingSpeakerLabels, store.timeline.contains(where: { $0.speaker != nil }) {
+        speakerLabeledTextView
+      } else {
+        Text(store.recordingCard.transcription)
+          .foregroundColor(store.recordingCard.recording.isTranscribing ? .DS.Text.subdued : .DS.Text.base)
+          .textStyle(.body)
+          .lineLimit(nil)
+          .textSelection(.enabled)
+          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+          .padding(.vertical, .grid(2))
+          .padding(.horizontal, .grid(4))
+      }
+    }
+  }
+
+  private var speakerLabeledTextView: some View {
+    LazyVStack(alignment: .leading, spacing: .grid(2)) {
+      ForEach(store.timeline) { item in
+        VStack(alignment: .leading, spacing: .grid(1)) {
+          if let speaker = item.speaker {
+            Text(speaker)
+              .textStyle(.caption)
+              .padding(.horizontal, .grid(1))
+              .padding(.vertical, 2)
+              .background(Capsule().fill(Color.DS.Background.accent.opacity(0.3)))
+              .foregroundColor(.DS.Text.accent)
+          }
+          Text(item.text)
+            .foregroundColor(.DS.Text.base)
+            .textStyle(.body)
+            .lineLimit(nil)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+      }
+    }
+    .padding(.vertical, .grid(2))
+    .padding(.horizontal, .grid(4))
   }
 
   private var timelineTranscriptionView: some View {
     LazyVStack {
       ForEach(store.timeline) { item in
         VStack(alignment: .leading, spacing: .grid(1)) {
-          Text(
-            "[\(item.startTime.formatted(.time(pattern: .hourMinuteSecond(padHourToLength: 2, fractionalSecondsLength: 2)))) - \(item.endTime.formatted(.time(pattern: .hourMinuteSecond(padHourToLength: 2, fractionalSecondsLength: 2))))]"
-          )
-          .foregroundColor(.DS.Text.subdued)
-          .textStyle(.caption)
+          HStack(spacing: .grid(2)) {
+            Text(
+              "[\(item.startTime.formatted(.time(pattern: .hourMinuteSecond(padHourToLength: 2, fractionalSecondsLength: 2)))) - \(item.endTime.formatted(.time(pattern: .hourMinuteSecond(padHourToLength: 2, fractionalSecondsLength: 2))))]"
+            )
+            .foregroundColor(.DS.Text.subdued)
+            .textStyle(.caption)
+
+            if let speaker = item.speaker {
+              Text(speaker)
+                .textStyle(.caption)
+                .padding(.horizontal, .grid(1))
+                .padding(.vertical, 2)
+                .background(Capsule().fill(Color.DS.Background.accent.opacity(0.3)))
+                .foregroundColor(.DS.Text.accent)
+            }
+          }
 
           Text(item.text)
             .foregroundColor(.DS.Text.base)

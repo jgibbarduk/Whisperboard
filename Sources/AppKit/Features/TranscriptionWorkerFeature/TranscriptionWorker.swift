@@ -48,6 +48,7 @@ struct TranscriptionWorker: Reducer {
   enum CancelID: Hashable { case processing }
 
   @Dependency(RecordingTranscriptionStream.self) var transcriptionStream: RecordingTranscriptionStream
+  @Dependency(\.webhookClient) var webhookClient: WebhookClient
 
   var body: some Reducer<State, Action> {
     Reduce { state, action in
@@ -226,6 +227,16 @@ struct TranscriptionWorker: Reducer {
         transcription.text = result.text
         transcription.status = .done(Date())
         transcription.timings = Transcription.Timings(tokensPerSecond: result.timings.tokensPerSecond, fullPipeline: result.timings.fullPipeline)
+      }
+
+      let webhookURLString = task.settings.webhookURL
+      if task.settings.isWebhookEnabled, !webhookURLString.isEmpty, let webhookURL = URL(string: webhookURLString) {
+        do {
+          try await webhookClient.send(webhookURL, transcription.value)
+          logs.debug("Webhook sent successfully for task ID: \(task.id)")
+        } catch {
+          logs.error("Failed to send webhook for task ID \(task.id): \(error.localizedDescription)")
+        }
       }
     } catch {
       logs.error("Error during transcription for task ID \(task.id): \(error.localizedDescription)")

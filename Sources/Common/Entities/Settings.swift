@@ -12,6 +12,9 @@ public struct Settings: Hashable {
   public var isUsingNeuralEngine: Bool
   public var isVADEnabled: Bool
   public var isLiveTranscriptionEnabled: Bool
+  public var webhookURL: String
+  public var isWebhookEnabled: Bool
+  public var isShowingSpeakerLabels: Bool
 
   public var voiceLanguage: String? {
     get { parameters.language }
@@ -27,7 +30,10 @@ public struct Settings: Hashable {
     isUsingGPU: Bool = false,
     isUsingNeuralEngine: Bool = true,
     isVADEnabled: Bool = false,
-    isLiveTranscriptionEnabled: Bool = false
+    isLiveTranscriptionEnabled: Bool = false,
+    webhookURL: String = "",
+    isWebhookEnabled: Bool = false,
+    isShowingSpeakerLabels: Bool = false
   ) {
     self.useMockedClients = useMockedClients
     self.selectedModelName = selectedModelName
@@ -38,6 +44,9 @@ public struct Settings: Hashable {
     self.isUsingNeuralEngine = isUsingNeuralEngine
     self.isVADEnabled = isVADEnabled
     self.isLiveTranscriptionEnabled = isLiveTranscriptionEnabled
+    self.webhookURL = webhookURL
+    self.isWebhookEnabled = isWebhookEnabled
+    self.isShowingSpeakerLabels = isShowingSpeakerLabels
   }
 }
 
@@ -54,6 +63,9 @@ extension Settings: Codable {
     case isUsingNeuralEngine
     case isVADEnabled
     case isLiveTranscriptionEnabled
+    case webhookURL
+    case isWebhookEnabled
+    case isShowingSpeakerLabels
   }
 
   public init(from decoder: Decoder) throws {
@@ -67,5 +79,8 @@ extension Settings: Codable {
     isUsingNeuralEngine = (try? container.decode(Bool.self, forKey: .isUsingNeuralEngine)) ?? true
     isVADEnabled = (try? container.decode(Bool.self, forKey: .isVADEnabled)) ?? false
     isLiveTranscriptionEnabled = (try? container.decode(Bool.self, forKey: .isLiveTranscriptionEnabled)) ?? false
+    webhookURL = (try? container.decode(String.self, forKey: .webhookURL)) ?? ""
+    isWebhookEnabled = (try? container.decode(Bool.self, forKey: .isWebhookEnabled)) ?? false
+    isShowingSpeakerLabels = (try? container.decode(Bool.self, forKey: .isShowingSpeakerLabels)) ?? false
   }
 }
